@@ -5,28 +5,69 @@ import java.util.*;
 public class Q1 {
 
 	private static class Node {
+		// Attribute members
 		int value;
 		int[] adjancy;
+		Node[] adjancy_nodes;
 
+		// Constructors
 		public Node(int val, int[] adj) {
+			System.out.println("DEBUG: Setting node " + val + " with int adjancy " + adj.toString());
 			this.value = val;
 			this.adjancy = adj;
+			this.adjancy_nodes = new Node[0];
 		}
 
 		public Node(int val) {
+			System.out.println("DEBUG: Setting node " + val + " with empty adjancy");
 			this.value = val;
+			this.adjancy = new int[0];
+			this.adjancy_nodes = new Node[0];
+		}
+
+		public Node(int val, Node[] adj_n) {
+			System.out.println("DEBUG: Setting node " + val + " with Node adjancy");
+			this.value = val;
+			this.adjancy_nodes = adj_n;
 			this.adjancy = new int[0];
 		}
 
-		public void addAdjacent(Node nodeToAdd) {
-			//if (this.adjancy.contains(nodeToAdd.value)) { return; }
-			int[] adjancy_extended = new int[adjancy.length + 1];
-			for (int i=0; i<adjancy.length; i++) {
-				adjancy_extended[i] = adjancy[i];
-			}
-			adjancy_extended[adjancy_extended.length - 1] = nodeToAdd.value;
-			return;
+		// Getters
+		private boolean checkNode(Node nodeToCheck) {
+			return true;
 		}
+
+		// Setters
+		public int addAdjacentNode(Node nodeToAdd) throws Exception {
+			/*
+			 * Add Node `node` to current node `this` adjancies
+			 * Act on `this.adjancy_nodes` and `this.adjancy`
+			 */
+			if (!this.checkNode(nodeToAdd)) { throw new Exception("ERROR: Could not add node " + nodeToAdd.value + " to adjancy of " + this.value); }
+			int current_capacity = this.adjancy_nodes.length;
+			int new_capacity = current_capacity + 1;
+			Node[] new_adj_nodes = new Node[new_capacity];
+			int[] new_adj = new int[new_capacity];
+			for (int i=0; i<new_capacity; i++) {
+				if (i == current_capacity) {
+					new_adj_nodes[i] = nodeToAdd;
+					new_adj[i] = nodeToAdd.value;
+				}
+				new_adj_nodes[i] = this.adjancy_nodes[i];
+				new_adj[i] = this.adjancy[i];
+			}
+			return 0;
+		}
+
+//		public void addAdjacent(Node nodeToAdd) {
+//			//if (this.adjancy.contains(nodeToAdd.value)) { return; }
+//			int[] adjancy_extended = new int[adjancy.length + 1];
+//			for (int i=0; i<adjancy.length; i++) {
+//				adjancy_extended[i] = adjancy[i];
+//			}
+//			adjancy_extended[adjancy_extended.length - 1] = nodeToAdd.value;
+//			return;
+//		}
 	}
 
 	private static class Graph {
@@ -49,6 +90,29 @@ public class Q1 {
 			this.hm = graphArrToHashMap(this.adj_mat);
 		}
 
+		private static HashMap<Integer, int[]> graphArrToHashMap(int[][] graph) {
+		/*
+		 * Convert an array of arrays of int to a HashMap<Integer, int[]>
+		 */
+		HashMap<Integer, int[]> hm = new HashMap<Integer, int[]>(graph.length);
+		for (int node_idx=0; node_idx<graph.length; node_idx++) {
+		//for (int[] node : graph) {
+			if (hm.containsKey(node_idx)) {
+				System.out.println("DEBUG: HashMap already contains " + node_idx);
+				System.out.println("Appending...");
+				int[] adjacent_nodes = graph[node_idx];
+				int[] current_adjacent_nodes = hm.get(node_idx);
+				// Concat two lists
+				int[] all_nodes = new int[adjacent_nodes.length + current_adjacent_nodes.length];
+				for (int idx=0; idx<adjacent_nodes.length; idx++) { all_nodes[idx] = adjacent_nodes[idx]; }
+				for (int idx=0; idx<current_adjacent_nodes.length; idx++) { all_nodes[adjacent_nodes.length + idx] = current_adjacent_nodes[idx]; }
+				hm.put(node_idx, all_nodes);
+			}
+			hm.put(node_idx, graph[node_idx]);
+		}
+		return hm;
+		}
+
 
 		// Getters
 		private int[][] get_adj_mat() {
@@ -60,7 +124,7 @@ public class Q1 {
 			return adj_mat;
 		}
 
-		private Node get_node(int node_value) {
+		private Node getNodeFromValue(int node_value) {
 			int nodes_length = this.nodes.length;
 			Node[] node_candidates = new Node[nodes_length];
 			int count = 0;
@@ -95,15 +159,16 @@ public class Q1 {
 
 
 		// Setters
-		private void set_node_adj(Node node) {
-		/*
-		 * Convert node adjancy from list of int to list of Node
-		 */
-			for (int i=0; i<node.adjancy.length; i++) {
-				int node_adj_val = node.adjancy[i];
-				Node node_adj = this.get_node(node_adj_val);
-				node.adjancy[i] = node_adj;
+		private void setNodeAdjancy(Node nodeToSet) {
+			/*
+			 * For nodes initialized with int `adjancy`, find corresponding Node nodes and add them them to `adjancy_nodes`
+			 */
+			int numAdjacentNodes = nodeToSet.adjancy.length;
+			for (int i=0; i<numAdjacentNodes; i++) {
+				Node node = this.getNodeFromValue(nodeToSet.adjancy[i]);
+				nodeToSet.adjancy_nodes[i] = node;
 			}
+			return;
 		}
 
 
@@ -189,7 +254,7 @@ public class Q1 {
 						continue;
 				}
 				// Get node through its value
-				Node next_node = this.get_node(next_node_value);
+				Node next_node = this.getNodeFromValue(next_node_value);
 				// If node has already been visited, move forward to next loop
 				if (visited.contains(next_node)) {
 						System.out.println("DEBUG: Node " + next_node + "(" + next_node.value + ") " + "already visited, skipping...");
@@ -206,29 +271,6 @@ public class Q1 {
 		}
 	}
 
-
-	private static HashMap<Integer, int[]> graphArrToHashMap(int[][] graph) {
-	/*
-	 * Convert an array of arrays of int to a HashMap<Integer, int[]>
-	 */
-	HashMap<Integer, int[]> hm = new HashMap<Integer, int[]>(graph.length);
-	for (int node_idx=0; node_idx<graph.length; node_idx++) {
-	//for (int[] node : graph) {
-		if (hm.containsKey(node_idx)) {
-			System.out.println("DEBUG: HashMap already contains " + node_idx);
-			System.out.println("Appending...");
-			int[] adjacent_nodes = graph[node_idx];
-			int[] current_adjacent_nodes = hm.get(node_idx);
-			// Concat two lists
-			int[] all_nodes = new int[adjacent_nodes.length + current_adjacent_nodes.length];
-			for (int idx=0; idx<adjacent_nodes.length; idx++) { all_nodes[idx] = adjacent_nodes[idx]; }
-			for (int idx=0; idx<current_adjacent_nodes.length; idx++) { all_nodes[adjacent_nodes.length + idx] = current_adjacent_nodes[idx]; }
-			hm.put(node_idx, all_nodes);
-		}
-		hm.put(node_idx, graph[node_idx]);
-	}
-	return hm;
-	}
 
 
 	private static boolean DFS(int[][] graph_arr, boolean return_cycles) {
@@ -292,15 +334,15 @@ public class Q1 {
 	Q1 graph_q1 = new Q1();
 	int[][] adj = { {1, 2}, {0, 2}, {0, 1} };
 	
-	Q1.Node node_0 = new Node(0);
-	Q1.Node node_1 = new Node(1);
-	Q1.Node node_2 = new Node(2);
+	Q1.Node node_0 = new Node(0, adj[0]);
+	Q1.Node node_1 = new Node(1, adj[1]);
+	Q1.Node node_2 = new Node(2, adj[2]);
 
 	Q1.Node[] nodes = {node_0, node_1, node_2};
 	Q1.Graph graph = new Graph(nodes, adj);
 
 	System.out.println("DFS (node_1)");
-	int[] dfs_arr = graph.DFS(node_1, true);
+	int[] dfs_arr = graph.DFS(node_1, false);
 	System.out.print("[");
 	for (int i=0; i<dfs_arr.length; i++) { System.out.print(dfs_arr[i] + ", "); }
 	System.out.println("]");
