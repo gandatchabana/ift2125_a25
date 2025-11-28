@@ -7,15 +7,18 @@ public class Q1 {
 	private static class Node {
 		int value;
 		int[] adjancy;
+		Node[] adjancyNodes;
 
 		public Node(int val, int[] adj) {
 			this.value = val;
 			this.adjancy = adj;
+			this.adjancyNodes = new Node[adj.length];
 		}
 
 		public Node(int val) {
 			this.value = val;
 			this.adjancy = new int[0];
+			this.adjancyNodes = new Node[0];
 		}
 
 		public void addAdjacent(Node nodeToAdd) {
@@ -25,6 +28,7 @@ public class Q1 {
 				adjancy_extended[i] = adjancy[i];
 			}
 			adjancy_extended[adjancy_extended.length - 1] = nodeToAdd.value;
+			this.adjancy = adjancy_extended;
 			return;
 		}
 	}
@@ -102,7 +106,7 @@ public class Q1 {
 			for (int i=0; i<node.adjancy.length; i++) {
 				int node_adj_val = node.adjancy[i];
 				Node node_adj = this.get_node(node_adj_val);
-				node.adjancy[i] = node_adj;
+				node.adjancyNodes[i] = node_adj;
 			}
 		}
 
@@ -115,7 +119,8 @@ public class Q1 {
 			//int[this.nodes.length] visited;
 			//int[this.nodes.length] dfs_nodes;
 			int nodes_length = this.nodes.length;
-			LinkedList<Node> visited = new LinkedList<Node>();
+			//LinkedList<Node> visited = new LinkedList<Node>();
+			Set<Integer> visited = new HashSet<>();
 			LinkedList<Integer> dfs_nodes = new LinkedList<Integer>();
 			
 			// Edge cases
@@ -135,25 +140,14 @@ public class Q1 {
 			
 			// If nodes disconnected from `root`, explore them
 			if (explore_unvisited == true) {
-				System.out.println("");
-				if (visited.size() != nodes_length) {
-					// Deep copy of `this.nodes`
-					LinkedList<Node> nodes_left = new LinkedList<Node>();
-					for (int i=0; i<nodes_length; i++) {
-						Node node_to_evaluate = this.nodes[i];
-						if (visited.contains(node_to_evaluate)) { continue; }
-						Node node_to_add = new Node(node_to_evaluate.value, node_to_evaluate.adjancy);
-						nodes_left.push(node_to_add);
+				for (int i=0; i<this.nodes.length; i++) {
+					if (!visited.contains(i)) {
+						this.DFS(this.nodes[i], visited, dfs_nodes);
 					}
-					// Do DFS over `nodes_left`
-					for (Node node : nodes_left) {
-						this.DFS(node, visited, dfs_nodes);
-					}
-					
 				}
 
 			}
-			
+
 			// Convert dfs_node LinkedList -> int[]
 			Object[] dfs_nodes_obj = dfs_nodes.toArray();
 			int[] dfs_nodes_arr = new int[dfs_nodes_obj.length];
@@ -165,18 +159,18 @@ public class Q1 {
 		}
 
 
-        private void DFS(Node root, LinkedList<Node> visited, LinkedList<Integer> dfs_nodes) {
+        private void DFS(Node root, Set<Integer> visited, LinkedList<Integer> dfs_nodes) {
 			// If at "leaf" node, visit and add to dfs_nodes
 			if (root.adjancy.length == 0) {
 				System.out.println("DEBUG: At leaf node, adding to visited and dfs_nodes and returning...");
-				visited.add(root);
+				visited.add(root.value);
 				dfs_nodes.add(root.value);
 				return;
 			}
 			
 			System.out.println("DEBUG: DFS[" + root + "(" + root.value + ")]");
 			// Visit node
-			visited.add(root);
+			visited.add(root.value);
 			System.out.println("DEBUG: Added to visited");
 			// Get adjancy nodes
 			int[] node_adjancy = root.adjancy;
@@ -191,7 +185,7 @@ public class Q1 {
 				// Get node through its value
 				Node next_node = this.get_node(next_node_value);
 				// If node has already been visited, move forward to next loop
-				if (visited.contains(next_node)) {
+				if (visited.contains(next_node.value)) {
 						System.out.println("DEBUG: Node " + next_node + "(" + next_node.value + ") " + "already visited, skipping...");
 						continue;
 				}
