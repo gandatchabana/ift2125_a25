@@ -98,6 +98,25 @@ public class Q1 {
 		}
 
 
+        private LinkedList<Integer> getCycle(Integer nodeValue, boolean[] onStack, Deque<Integer> pathStack) {
+                Deque<Integer> onStackQueue = new LinkedList<Integer>();
+                LinkedList<Integer> cycle = new LinkedList<Integer>();
+                
+                boolean started = false;
+
+                for (int i=0; i<pathStack.size(); i++) {
+                        int vertex = pathStack.poll();
+                        if (vertex == nodeValue) {
+                                started = true;
+                        }
+
+                        if (started) {
+                                cycle.offer(i);
+                        }
+                }
+                return cycle;
+        }
+
 		// Setters
 		private void set_node_adj(Node node) {
 		/*
@@ -120,8 +139,11 @@ public class Q1 {
 			//int[this.nodes.length] dfs_nodes;
 			int nodes_length = this.nodes.length;
 			//LinkedList<Node> visited = new LinkedList<Node>();
-			Set<Integer> visited = new HashSet<>();
+			//Set<Integer> visited = new HashSet<>();
 			LinkedList<Integer> dfs_nodes = new LinkedList<Integer>();
+            LinkedList<LinkedList<Integer>> foundCycles = new LinkedList<LinkedList<Integer>>();
+            boolean[] onStack = new boolean[nodes_length];
+            boolean[] visited = new boolean[nodes_length];
 			
 			// Edge cases
 			if (root == null) { return new int[0]; }
@@ -136,13 +158,12 @@ public class Q1 {
 			}
 			
 			// DFS private method
-            this.DFS(root, visited, dfs_nodes);
-			
+            this.DFS(root, onStack, visited, foundCycles, dfs_nodes );
 			// If nodes disconnected from `root`, explore them
 			if (explore_unvisited == true) {
 				for (int i=0; i<this.nodes.length; i++) {
-					if (!visited.contains(i)) {
-						this.DFS(this.nodes[i], visited, dfs_nodes);
+					if (!visited[i]) {
+						this.DFS(this.nodes[i], onStack, visited, foundCycles, dfs_nodes );
 					}
 				}
 
@@ -154,49 +175,71 @@ public class Q1 {
 			for (int i=0; i<dfs_nodes_arr.length; i++) {
 				dfs_nodes_arr[i] = (int) dfs_nodes_obj[i];
 			}
-			
+		    
 			return dfs_nodes_arr;
 		}
 
 
-        private void DFS(Node root, Set<Integer> visited, LinkedList<Integer> dfs_nodes) {
+        private void DFS(Node root, boolean[] onStack, boolean[] visited, LinkedList<LinkedList<Integer>> foundCycles, LinkedList<Integer> dfs_nodes, Deque<Integer> pathStack) {
 			// If at "leaf" node, visit and add to dfs_nodes
 			if (root.adjancy.length == 0) {
 				System.out.println("DEBUG: At leaf node, adding to visited and dfs_nodes and returning...");
-				visited.add(root.value);
+				visited[root.value] = true;
 				dfs_nodes.add(root.value);
 				return;
 			}
 			
 			System.out.println("DEBUG: DFS[" + root + "(" + root.value + ")]");
 			// Visit node
-			visited.add(root.value);
+			visited[root.value] = true;
+            onStack[root.value] = true;
+            pathStack.push(root.value); 
 			System.out.println("DEBUG: Added to visited");
-			// Get adjancy nodes
-			int[] node_adjancy = root.adjancy;
-			// Iterate through adjancy until spent
-			for (int i=0; i<node_adjancy.length; i++) {
-				int next_node_value = node_adjancy[i];
-				// If next_node_value is not in graph
-				if (!hm.containsKey(next_node_value)) {
-						System.out.println("ERROR: Graph does not contain node " + next_node_value);
-						continue;
-				}
-				// Get node through its value
-				Node next_node = this.get_node(next_node_value);
-				// If node has already been visited, move forward to next loop
-				if (visited.contains(next_node.value)) {
-						System.out.println("DEBUG: Node " + next_node + "(" + next_node.value + ") " + "already visited, skipping...");
-						continue;
-				}
-				// Else move to DFS call on the node
-				System.out.println("DEBUG: Calling DSF on node " + next_node + "(" + next_node.value + ")");
-				this.DFS(next_node, visited, dfs_nodes);
-			}
-			// Add to dfs_nodes
-			System.out.println("DEBUG: Adding node " + root + "(" + root.value + ") to dsf_nodes");
-			dfs_nodes.add(root.value);
-			return;
+			System.out.println("DEBUG: onStack");
+
+            for (int nodeValue: root.adjancy) {
+                if (!visited[nodeValue]) {
+                    pathStack = new ArrayDeque<Integer>();
+                    this.DFS(this.get_node(nodeValue), visited, onStack, foundCycles, dfs_nodes, pathStack);
+                } else if (onStack[nodeValue]) {
+                    // Found a cycle
+                    LinkedList<Integer> cycle = this.getCycle(nodeValue, onStack, pathStack);
+                    foundCycles.offer(cycle);
+                }
+            }
+
+            onStack[root.value] = false;
+            pathStack.pop();
+            dfs_nodes.add(root.value);
+
+            return;
+
+
+			// // Get adjancy nodes
+			//int[] node_adjancy = root.adjancy;
+			// // Iterate through adjancy until spent
+			//for (int i=0; i<node_adjancy.length; i++) {
+			//	int next_node_value = node_adjancy[i];
+			//	// If next_node_value is not in graph
+			//	if (!hm.containsKey(next_node_value)) {
+			//			System.out.println("ERROR: Graph does not contain node " + next_node_value);
+			//			continue;
+			//	}
+			//	// Get node through its value
+			//	Node next_node = this.get_node(next_node_value);
+			//	// If node has already been visited, move forward to next loop
+			//	if (visited[next_node.value]) {
+			//			System.out.println("DEBUG: Node " + next_node + "(" + next_node.value + ") " + "already visited, skipping...");
+			//			continue;
+			//	}
+			//	// Else move to DFS call on the node
+			//	System.out.println("DEBUG: Calling DSF on node " + next_node + "(" + next_node.value + ")");
+			//	this.DFS(next_node, visited, dfs_nodes);
+			//}
+			// // Add to dfs_nodes
+			//System.out.println("DEBUG: Adding node " + root + "(" + root.value + ") to dsf_nodes");
+			//dfs_nodes.add(root.value);
+			//return;
 		}
 	}
 
