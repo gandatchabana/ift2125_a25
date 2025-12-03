@@ -6,6 +6,11 @@ public class Graph {
 				// Attributes
 				Node[] nodes;
 				int numNodes;
+				// finishOrder attribute
+				int[] stepOrder;
+				int stepCount;
+				int[] finishOrder;
+				int finishCount;
 				// Cycle attributes
 				private List<List<Integer>> cycles = new ArrayList<>();
 				// SCC attributes
@@ -13,7 +18,7 @@ public class Graph {
 				private int[] disc;
 				private int[] lowlink;
 				private Deque<Integer> sccStack;
-				private int discCount = 0;
+				private int discCount;
 
 
 				private List<Integer> arrToLinkedList(int[] arr) {
@@ -80,6 +85,10 @@ public class Graph {
 				public Graph(int[][] graphArr) {
 								this.nodes = arrToNodes(graphArr);
 								this.numNodes = this.nodes.length;
+								this.finishOrder = new int[numNodes];
+								this.finishCount = 0;
+								this.stepOrder = new int[numNodes];
+								this.stepCount = 1;
 								this.cycles = new ArrayList<>();
 								this.SCCs = new ArrayList<>();
 								this.disc = new int[numNodes];
@@ -242,12 +251,8 @@ public class Graph {
 				private void DFS(Node root, boolean[] onStack, boolean[] visited, List<List<Integer>> foundCycles, List<List<Integer>> foundSCCs, LinkedList<Integer> dfs_nodes, Deque<Integer> pathStack) {
 								// If at "leaf" node, visit and add to dfs_nodes
 								if (root.adjancy.size() == 0) {
-												System.out.println("DEBUG: At leaf node, adding to visited and dfs_nodes and returning...");
-												visited[root.value] = true;
-												dfs_nodes.add(root.value);
-												return;
+												System.out.println("DEBUG: At leaf node...");
 								}
-
 								System.out.println("DEBUG: DFS[" + root + "(" + root.value + ")]");
 								// Visit node
 								visited[root.value] = true;
@@ -258,6 +263,7 @@ public class Graph {
 								this.disc[root.value] = this.discCount;
 								this.lowlink[root.value] = this.discCount;
 								this.discCount++;
+								this.stepCount++;
 								// Printing stuff for DEBUG
 								System.out.println("DEBUG(DFS): Added to visited " + root.value);
 								System.out.println("DEBUG(DFS): onStack " + root.value);
@@ -267,41 +273,49 @@ public class Graph {
 								System.out.println("DEBUG(DFS): discovery array  " + arrToLinkedList(this.disc));
 								System.out.println("DEBUG(DFS): lowlink array " + arrToLinkedList(this.lowlink));
 
-								for (int nodeValue: root.adjancy) {
+								if (root.adjancy.size() > 0) {
+										for (int nodeValue: root.adjancy) {
 												if (!visited[nodeValue]) {
-																this.DFS(this.getNode(nodeValue), onStack, visited, foundCycles, foundSCCs, dfs_nodes, pathStack);
-																// SCC
-																System.out.print("DEBUG(SCC): Setting lowlink["  + root.value + "] to ");
-																this.lowlink[root.value] = this.lowlink[root.value] < this.lowlink[nodeValue] ? this.lowlink[root.value] : this.lowlink[nodeValue];
-																System.out.println(this.lowlink[root.value]);
+														this.DFS(this.getNode(nodeValue), onStack, visited, foundCycles, foundSCCs, dfs_nodes, pathStack);
+														// SCC
+														System.out.print("DEBUG(SCC): Setting lowlink["  + root.value + "] to ");
+														this.lowlink[root.value] = this.lowlink[root.value] < this.lowlink[nodeValue] ? this.lowlink[root.value] : this.lowlink[nodeValue];
+														System.out.println(this.lowlink[root.value]);
 												} else if (onStack[nodeValue]) {
-																// SCC
-																System.out.print("DEBUG(SCC): Setting lowlink["  + root.value + "] to ");
-																this.lowlink[root.value] = this.lowlink[root.value] < this.disc[nodeValue] ? this.lowlink[root.value] : this.disc[nodeValue];
-																System.out.println(this.lowlink[root.value]);
-																// Found a cycle
-																System.out.println("DEBUG(Cycle): Found cycle");
-																LinkedList<Integer> cycle = this.getCycle(nodeValue, onStack, pathStack);
-																System.out.println("DEBUG(Cycle): Adding cycle " + cycle + " to foundCycles");
-																foundCycles.add(cycle);
+														// SCC
+														System.out.print("DEBUG(SCC): Setting lowlink["  + root.value + "] to ");
+														this.lowlink[root.value] = this.lowlink[root.value] < this.disc[nodeValue] ? this.lowlink[root.value] : this.disc[nodeValue];
+														System.out.println(this.lowlink[root.value]);
+														// Found a cycle
+														System.out.println("DEBUG(Cycle): Found cycle");
+														LinkedList<Integer> cycle = this.getCycle(nodeValue, onStack, pathStack);
+														System.out.println("DEBUG(Cycle): Adding cycle " + cycle + " to foundCycles");
+														foundCycles.add(cycle);
 												}
-								}
+												this.stepCount++;
+										}
 
-								// SCC Head node
-								if (this.lowlink[root.value] == this.disc[root.value]) {
+										// SCC Head node
+										if (this.lowlink[root.value] == this.disc[root.value]) {
 												System.out.println("DEBUG(SCC): Found head node of SCC");
 												List<Integer> scc = this.getSCC(root, onStack);
 												System.out.println("DEBUG(SCC): Adding SCC " + scc + " to foundSCCs");
 												foundSCCs.add(scc);
+										}
 								}
 								onStack[root.value] = false;
 								int pathStackPopped = pathStack.pop();
 								//int sccStackPopped = sccStack.pop();
+								this.finishOrder[this.finishCount] = root.value;
+								this.stepOrder[this.finishCount] = root.value;
+								this.finishCount++;
 								dfs_nodes.add(root.value);
 								System.out.println("DEBUG(DFS): Removed " + root.value + " from onStack");
 								System.out.println("DEBUG(DFS): Popped " + pathStackPopped + " from pathStack");
 								//System.out.println("DEBUG(DFS): Popped " + sccStackPopped + " from sccStack");
 								System.out.println("DEBUG(DFS): Added " + root.value + " to dfs_nodes");
+								System.out.println("DEBUG(DFS): Added " + root.value + " to finishOrder");
+								System.out.println("DEBUG(DFS): Incrementing finishCount: " + this.finishCount);
 
 								return;
 				}
@@ -339,6 +353,225 @@ public class Graph {
 								return graphObj.SCCs;
 				}
 
+				/* -----------------------------------------------------------------
+				 *  4.  Count reachable nodes from a start vertex
+				 * ----------------------------------------------------------------- */
+				public static int countReachableNodes(int[][] graph, int start) {
+								Graph graphObj = new Graph(graph);
+								graphObj.DFS(graphObj.nodes[start], false);
+								return graphObj.discCount;
+				}
+//				public static int countReachableNodes(int[][] graph, int start) {
+//						Graph g = new Graph(graph);
+//						boolean[] visited = new boolean[g.numNodes];
+//						List<Integer> reachable = new LinkedList<>();
+//						g.simpleDFS(start, visited, reachable);
+//						System.out.println("DEBUG(countReachableNodes): reachable = " + reachable);
+//						return reachable.size();
+//				}
+
+				/* -----------------------------------------------------------------
+				 *  5.  Find bridge vertices (undirected interpretation)
+				 * ----------------------------------------------------------------- */
+				public static List<Integer> findBridgeNodes(int[][] graph) {
+						Graph g = new Graph(graph);
+						int[] disc = new int[g.numNodes];
+						int[] low  = new int[g.numNodes];
+						boolean[] visited = new boolean[g.numNodes];
+						boolean[] parent = new boolean[g.numNodes];   // true if vertex has a parent
+						List<Integer> bridges = new LinkedList<>();
+
+						// Initialise disc to -1 (unvisited)
+						Arrays.fill(disc, -1);
+						int time = 0;
+
+						for (int i = 0; i < g.numNodes; i++) {
+								if (!visited[i]) {
+										g.bridgeDFS(i, -1, time, visited, disc, low, bridges);
+								}
+						}
+						System.out.println("DEBUG(findBridgeNodes): bridges = " + bridges);
+						return bridges;
+				}
+
+				/** Helper for bridge detection – works on the *undirected* view of the graph. */
+				private void bridgeDFS(int u,
+								int parent,
+								int time,
+								boolean[] visited,
+								int[] disc,
+								int[] low,
+								List<Integer> bridges) {
+
+						visited[u] = true;
+						disc[u] = low[u] = ++time;
+
+						for (int v : this.nodes[u].adjancy) {
+								if (!visited[v]) {
+										bridgeDFS(v, u, time, visited, disc, low, bridges);
+										low[u] = Math.min(low[u], low[v]);
+
+										// If the only way from v to an ancestor of u is the edge u‑v,
+										// then u is a bridge (in the undirected sense).
+										if (low[v] > disc[u]) {
+												bridges.add(u);
+												System.out.println("DEBUG(bridgeDFS): bridge found at vertex " + u);
+										}
+								} else if (v != parent) {
+										// Back‑edge (undirected) – update low[u]
+										low[u] = Math.min(low[u], disc[v]);
+								}
+						}
+				}
+
+				/* -----------------------------------------------------------------
+				 *  6.  Finishing times (post‑order) of a full DFS
+				 * ----------------------------------------------------------------- */
+				private Map<Integer, Integer> computeFinishingTimes() {
+						Map<Integer, Integer> ft = new HashMap<Integer, Integer>();
+						this.DFS(this.nodes[0], true);
+						for (int i=0; i<this.numNodes; i++) {
+							ft.put(i, this.stepOrder[i]);
+						}
+						return ft;
+				}
+				
+				public static Map<Integer,Integer> getFinishingTimes(int[][] graph) {
+						Graph graphObj = new Graph(graph);
+						Map<Integer,Integer> ft = graphObj.computeFinishingTimes();
+						System.out.println("DEBUG(getFinishingTimes): " + ft);
+						return ft;
+				}
+
+				/* -----------------------------------------------------------------
+				 *  7.  Can we install everything if some nodes are broken?
+				 * ----------------------------------------------------------------- */
+				private boolean hasCycleIgnoring(Set<Integer> brokenSet) {
+						return false;
+				}
+
+				public static boolean canInstallAll(int[][] graph, List<Integer> broken) {
+						Graph graphObj= new Graph(graph);
+						Set<Integer> brokenSet = new HashSet<>(broken);
+						boolean hasCycle = graphObj.hasCycleIgnoring(brokenSet);
+						System.out.println("DEBUG(canInstallAll): broken = " + brokenSet +
+										", hasCycle = " + hasCycle);
+						return !hasCycle;
+				}
+
+				/* -----------------------------------------------------------------
+				 *  8.  Minimal dependency set for a target vertex
+				 * ----------------------------------------------------------------- */
+				public static List<Integer> findMinimalDependencySet(int[][] graph, int target) {
+						Graph graphObj= new Graph(graph);
+
+						// Build the *reverse* adjacency list (incoming edges)
+						List<Integer>[] rev = new List[graphObj.numNodes];
+						for (int i=0; i<graphObj.numNodes; i++) {
+								rev[i] = new LinkedList<Integer>();
+						}
+						for (Node node : graphObj.nodes) {
+								for (int adjNodeVal : node.adjancy) {
+										rev[adjNodeVal].add(node.value);   // edge n → nb becomes nb ← n
+								}
+						}
+
+						// BFS/DFS on the reverse graph starting from target
+						boolean[] visited = new boolean[graphObj.numNodes];
+						Deque<Integer> stack = new ArrayDeque<>();
+						stack.push(target);
+						visited[target] = true;
+						List<Integer> deps = new LinkedList<>();
+
+						while (!stack.isEmpty()) {
+								int cur = stack.pop();
+								for (int pred : rev[cur]) {
+										if (!visited[pred]) {
+												visited[pred] = true;
+												deps.add(pred);
+												stack.push(pred);
+										}
+								}
+						}
+
+						System.out.println("DEBUG(findMinimalDependencySet): target=" + target +
+										", deps=" + deps);
+						return deps;   // this is the transitive closure; it is already minimal
+				}
+
+				/* -----------------------------------------------------------------
+				 *  9.  Longest dependency chain (only defined for a DAG)
+				 * ----------------------------------------------------------------- */
+				public static int longestDependencyChain(int[][] graph) {
+						// First, check for cycles – if any exist the longest chain is undefined.
+						if (hasCycle(graph)) {
+								System.out.println("DEBUG(longestDependencyChain): graph has a cycle");
+								System.out.println("DEBUG(longestDependencyChain): Returning -1");
+								return -1;
+						}
+
+						Graph graphObj = new Graph(graph);
+
+						// Topological order = reverse of finishing times
+						List<Integer> topo = new LinkedList<>(graphObj.computeFinishingTimes().keySet());
+						Collections.reverse(topo);   // now in topological order
+
+						int[] dp = new int[graphObj.numNodes];   // longest distance from a source to v
+						int best = 0;
+
+						for (int v : topo) {
+								for (int nb : graphObj.nodes[v].adjancy) {
+										if (dp[nb] < dp[v] + 1) {
+												dp[nb] = dp[v] + 1;
+												best = Math.max(best, dp[nb]);
+										}
+								}
+						}
+
+						System.out.println("DEBUG(longestDependencyChain): longest length = " + best);
+						return best;   // length measured in edges (add 1 if you want vertex count)
+				}
+
+				/* -----------------------------------------------------------------
+				 * 10.  All source nodes (indegree == 0)
+				 * ----------------------------------------------------------------- */
+				private int[] computeIndegrees() {
+						int[] indeg = new int[this.numNodes];
+						for (int i=0; i<this.numNodes; i++) {
+								int indegNode=0;
+								List<Integer> adjExcludeNode = new LinkedList<Integer>();
+								// Populate adjExcludeNode with all adjancies but self adjancy
+								for (Node adjNode : this.nodes) {
+										if (adjNode.value == i) {continue;}
+										else {
+												List<Integer> adjNodeAdjArr = adjNode.adjancy;
+												if (adjNodeAdjArr.size() < 1) {continue;}
+												for (int adjNodeElem : adjNodeAdjArr) { adjExcludeNode.add(adjNodeElem); }
+										}
+								}
+								for (int elem : adjExcludeNode) {
+										if (elem == i) { indegNode++; }
+								}
+								indeg[i] = indegNode;
+						}
+						return indeg;
+				}
+				
+				public static List<Integer> findAllSourceNodes(int[][] graph) {
+						Graph graphObj = new Graph(graph);
+						int[] indeg = graphObj.computeIndegrees();
+						List<Integer> sources = new LinkedList<>();
+						for (int i = 0; i < indeg.length; i++) {
+								if (indeg[i] == 0) {
+										sources.add(i);
+								}
+						}
+						System.out.println("DEBUG(findAllSourceNodes): sources = " + sources);
+						return sources;
+				}
+
+
+
 				public static void main(String[] args) {
 								int[][] graphArr = {
 												{1, 2, 3},
@@ -348,19 +581,49 @@ public class Graph {
 								};
 
 								Graph graph = new Graph(graphArr);
-								System.out.println("Num of nodes: " + graph.numNodes);
 								System.out.println("Graph " + graph.adjArrToLinkedList(graphArr));
+								System.out.println("Num of nodes: " + graph.numNodes);
 
-								graph.DFS(graph.nodes[0], false);
+								//graph.DFS(graph.nodes[0], false);
 
-								System.out.println("\t\nhasCycle");
-								System.out.println(graph.hasCycle(graphArr));
+								//System.out.println("\t\nhasCycle");
+								//System.out.println(graph.hasCycle(graphArr));
 
-								System.out.println("\t\nnumCycles");
-								System.out.println(graph.findAllCycles(graphArr).size());
+								//System.out.println("\t\nnumCycles");
+								//System.out.println(graph.findAllCycles(graphArr).size());
 
-								System.out.println("\t\nnumSCCs");
-								System.out.println(graph.stronglyConnectedComponents(graphArr));
+								//System.out.println("\t\nnumSCCs");
+								//System.out.println(graph.stronglyConnectedComponents(graphArr));
+
+								int[][] graphDisArr = {
+												{},
+												{2},
+												{1}
+								};
+								Graph graphDisconnect = new Graph(graphDisArr);
+								System.out.println("GraphDiscoonected " + graphDisconnect.adjArrToLinkedList(graphDisArr));
+								System.out.println("Num of nodes: " + graphDisconnect.numNodes);
+
+
+								//System.out.println("\t\ncountReachableNodes(graphDisconnect, start==1)");
+								//System.out.println(graphDisconnect.countReachableNodes(graphDisArr, 1));
+
+								//System.out.println("\t\ngetFinishingTimes(graphDisconnect)");
+								//System.out.println(graphDisconnect.getFinishingTimes(graphDisArr));
+
+								//System.out.println("\t\ncanInstallAll(graph, broken==[0])");
+								//List<Integer> broken = new LinkedList<Integer>(Arrays.asList(0));
+								//System.out.println(graph.canInstallAll(graphArr, broken));
+
+								//System.out.println("\t\nfindMinimalDependencySet(graphDisArr, target==2)");
+								//System.out.println(graphDisconnect.findMinimalDependencySet(graphDisArr, 2));
+
+								//System.out.println("\t\nlongestDependencyChain(graph)");
+								//System.out.println(graph.longestDependencyChain(graphArr));
+
+								//System.out.println("\t\nfindAllSourceNodes(graphDisconnect)");
+								//System.out.println(graphDisconnect.findAllSourceNodes(graphDisArr));
+
 
 								return;
 				}
