@@ -138,8 +138,12 @@ public class Graph {
 								Deque<Integer> onStackQueue = new LinkedList<Integer>();
 								LinkedList<Integer> cycle = new LinkedList<Integer>();
 								boolean started = false;
+								// Get reverse iteration of pathStack
+								// ex: pathStack == [2, 1, 0] ==> Iterator[0, 1, 2]
 
-								for (int v : pathStack) {
+								Iterator<Integer> pathStackIterator = pathStack.descendingIterator();
+								while (pathStackIterator.hasNext()) {
+												int v = pathStackIterator.next();
 												if (v == nodeValue) {
 																started = true;
 																System.out.println("DEBUG(getCycle): Started cycle ");
@@ -157,19 +161,34 @@ public class Graph {
 								LinkedList<Integer> scc = new LinkedList<Integer>();
 								int nodeValue = node.value;
 								int sccStackValue;
-								do {
-												sccStackValue = sccStack.pop();
-												onStack[sccStackValue] = false;
-												scc.add(sccStackValue);
-												System.out.println("DEBUG: Popped from sccStack: " + sccStackValue);
-												System.out.println("DEBUG: sccStack " + sccStack);
-												System.out.println("DEBUG: Popped from onStack: " + sccStackValue);
-												System.out.println("DEBUG: onStack " + arrToLinkedList(onStack));
-												System.out.println("DEBUG: Added to SCC list " + sccStackValue);
-												System.out.println("DEBUG: SCC list " + scc);
-								} while (sccStackValue != nodeValue);
+								boolean started = false;
+								Iterator<Integer> sccStackIterator = sccStack.iterator();
+								while (sccStackIterator.hasNext()) {
+												int v = sccStackIterator.next();
+												if (v == nodeValue) {
+																started = true;
+																System.out.println("DEBUG(getSCC): Started SCC cycle");
+												}
+												if (started) {
+																scc.addFirst(v);
+																System.out.println("DEBUG(getSCC): Added path " + v + "to SCC cycle");
+												}
+								}
 								return scc;
 				}
+
+				private List<Integer> getSCC(Node root, boolean[] onStack) {
+								List<Integer> scc = new LinkedList<Integer>();
+								int rootValue = root.value;
+								int nodeValue;
+								do {
+												nodeValue = sccStack.pop();
+												onStack[nodeValue] = false;
+												scc.add(nodeValue);
+								} while (nodeValue != rootValue);
+								return scc;
+				}
+
 
 
 				/* DFS public method
@@ -185,7 +204,6 @@ public class Graph {
 								List<List<Integer>> foundCycles = new LinkedList<>();
 								List<List<Integer>> foundSCCs = new LinkedList<>();
 								int[] disc = new int[nodes_length];
-								int discCount = 0;
 								int[] low = new int[nodes_length];
 								LinkedList<Integer> dfs_nodes = new LinkedList<Integer>();
 								Deque<Integer> pathStack = new LinkedList<Integer>();
@@ -196,13 +214,13 @@ public class Graph {
 
 								System.out.println("\t\nDEBUG(DFS): Started DFS on node " + root.value);
 								// DFS private method
-								this.DFS(root, onStack, visited, foundCycles, foundSCCs, disc, discCount, low, dfs_nodes, pathStack);
+								this.DFS(root, onStack, visited, foundCycles, foundSCCs, dfs_nodes, pathStack);
 								// If nodes disconnected from `root`, explore them
 								if (explore_unvisited == true) {
 												for (int i=0; i<this.nodes.length; i++) {
 																if (!visited[i]) {
 																				System.out.println("DEBUG(DFS): Started DFS on disconnected node " + this.nodes[i].value);
-																				this.DFS(this.nodes[i], onStack, visited, foundCycles, foundSCCs, disc, discCount, low, dfs_nodes, pathStack);
+																				this.DFS(this.nodes[i], onStack, visited, foundCycles, foundSCCs, dfs_nodes, pathStack);
 																}
 												}
 								}
@@ -221,7 +239,7 @@ public class Graph {
 				}
 
 
-				private void DFS(Node root, boolean[] onStack, boolean[] visited, List<List<Integer>> foundCycles, List<List<Integer>> foundSCCs, int[] disc, int discCount, int[] low, LinkedList<Integer> dfs_nodes, Deque<Integer> pathStack) {
+				private void DFS(Node root, boolean[] onStack, boolean[] visited, List<List<Integer>> foundCycles, List<List<Integer>> foundSCCs, LinkedList<Integer> dfs_nodes, Deque<Integer> pathStack) {
 								// If at "leaf" node, visit and add to dfs_nodes
 								if (root.adjancy.size() == 0) {
 												System.out.println("DEBUG: At leaf node, adding to visited and dfs_nodes and returning...");
@@ -251,36 +269,38 @@ public class Graph {
 
 								for (int nodeValue: root.adjancy) {
 												if (!visited[nodeValue]) {
-																this.DFS(this.getNode(nodeValue), onStack, visited, foundCycles, foundSCCs, disc, discCount, lowlink, dfs_nodes, pathStack);
+																this.DFS(this.getNode(nodeValue), onStack, visited, foundCycles, foundSCCs, dfs_nodes, pathStack);
 																// SCC
 																System.out.print("DEBUG(SCC): Setting lowlink["  + root.value + "] to ");
-																lowlink[root.value] = lowlink[root.value] < lowlink[nodeValue] ? lowlink[root.value] : lowlink[nodeValue];
-																System.out.println(lowlink[root.value]);
+																this.lowlink[root.value] = this.lowlink[root.value] < this.lowlink[nodeValue] ? this.lowlink[root.value] : this.lowlink[nodeValue];
+																System.out.println(this.lowlink[root.value]);
 												} else if (onStack[nodeValue]) {
 																// SCC
 																System.out.print("DEBUG(SCC): Setting lowlink["  + root.value + "] to ");
-																lowlink[root.value] = lowlink[root.value] < disc[nodeValue] ? lowlink[root.value] : disc[nodeValue];
-																System.out.println(lowlink[root.value]);
+																this.lowlink[root.value] = this.lowlink[root.value] < this.disc[nodeValue] ? this.lowlink[root.value] : this.disc[nodeValue];
+																System.out.println(this.lowlink[root.value]);
 																// Found a cycle
 																System.out.println("DEBUG(Cycle): Found cycle");
 																LinkedList<Integer> cycle = this.getCycle(nodeValue, onStack, pathStack);
 																System.out.println("DEBUG(Cycle): Adding cycle " + cycle + " to foundCycles");
 																foundCycles.add(cycle);
 												}
-												// SCC Head node
-												if (lowlink[root.value] == disc[root.value]) {
-																System.out.println("DEBUG(SCC): Found head node of SCC");
-																List<Integer> scc = this.getSCC(root, onStack, pathStack);
-																System.out.println("DEBUG(SCC): Adding SCC" + scc + " to foundSCCs");
-																foundSCCs.add(scc);
-												}
 								}
 
+								// SCC Head node
+								if (this.lowlink[root.value] == this.disc[root.value]) {
+												System.out.println("DEBUG(SCC): Found head node of SCC");
+												List<Integer> scc = this.getSCC(root, onStack);
+												System.out.println("DEBUG(SCC): Adding SCC " + scc + " to foundSCCs");
+												foundSCCs.add(scc);
+								}
 								onStack[root.value] = false;
-								int popped = pathStack.pop();
+								int pathStackPopped = pathStack.pop();
+								//int sccStackPopped = sccStack.pop();
 								dfs_nodes.add(root.value);
 								System.out.println("DEBUG(DFS): Removed " + root.value + " from onStack");
-								System.out.println("DEBUG(DFS): Popped " + popped + " from pathStack");
+								System.out.println("DEBUG(DFS): Popped " + pathStackPopped + " from pathStack");
+								//System.out.println("DEBUG(DFS): Popped " + sccStackPopped + " from sccStack");
 								System.out.println("DEBUG(DFS): Added " + root.value + " to dfs_nodes");
 
 								return;
