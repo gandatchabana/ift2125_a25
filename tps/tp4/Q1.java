@@ -454,31 +454,22 @@ public class Graph {
 						return ft;
 				}
 
-				private boolean hasCycleIgnoring(Set<Integer> brokenSet) {
+				public static boolean canInstallAll(int[][] graph, List<Integer> broken) {
 						// To implement
 						return false;
-				}
-
-				public static boolean canInstallAll(int[][] graph, List<Integer> broken) {
-						Graph graphObj= new Graph(graph);
-						Set<Integer> brokenSet = new HashSet<>(broken);
-						boolean hasCycle = graphObj.hasCycleIgnoring(brokenSet);
-						System.out.println("DEBUG(canInstallAll): broken = " + brokenSet +
-										", hasCycle = " + hasCycle);
-						return !hasCycle;
 				}
 
 				public static List<Integer> findMinimalDependencySet(int[][] graph, int target) {
 						Graph graphObj= new Graph(graph);
 
-						// Build the *reverse* adjacency list (incoming edges)
+						// Build the reverse adjacency list (incoming edges)
 						List<Integer>[] rev = new List[graphObj.numNodes];
 						for (int i=0; i<graphObj.numNodes; i++) {
 								rev[i] = new LinkedList<Integer>();
 						}
 						for (Node node : graphObj.nodes) {
 								for (int adjNodeVal : node.adjancy) {
-										rev[adjNodeVal].add(node.value);   // edge n → nb becomes nb ← n
+										rev[adjNodeVal].add(node.value);
 								}
 						}
 
@@ -532,7 +523,7 @@ public class Graph {
 						}
 
 						System.out.println("DEBUG(longestDependencyChain): longest length = " + best);
-						return best;   // length measured in edges (add 1 if you want vertex count)
+						return best;
 				}
 
 				private int[] computeIndegrees() {
