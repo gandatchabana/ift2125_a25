@@ -20,7 +20,7 @@ public class Graph {
 				private Deque<Integer> sccStack;
 				private int discCount;
 
-
+				// Utils functions to convert int|boolean[] <==> List
 				private List<Integer> arrToLinkedList(int[] arr) {
 								List<Integer> list = new LinkedList<Integer>();
 								for (int i=0; i<arr.length; i++){
@@ -37,13 +37,6 @@ public class Graph {
 								return list;
 				}
 
-				private <T> List<T> arrToLinkedList(T[] arr) {
-								List<T> list = new LinkedList<T>();
-								for (int i=0; i<arr.length; i++){
-												list.add(arr[i]);
-								}
-								return list;
-				}
 
 				private List<List<Integer>> adjArrToLinkedList(int[][] adj) {
 								List<List<Integer>> adjList = new LinkedList<>();
@@ -69,7 +62,7 @@ public class Graph {
 								int value;
 								List<Integer> adjancy;
 
-								// Constructors
+								// Node constructor
 								public Node(int val) {
 												this.value = val;
 												this.adjancy = new LinkedList<Integer>();
@@ -81,7 +74,7 @@ public class Graph {
 								}
 				}
 
-				// Constructors
+				// Graph constructor
 				public Graph(int[][] graphArr) {
 								this.nodes = arrToNodes(graphArr);
 								this.numNodes = this.nodes.length;
@@ -101,6 +94,9 @@ public class Graph {
 
 
 				// Methods
+				/*
+				 * Transform an adjancy array int[][] to Node[]
+				 */
 				private Node[] arrToNodes(int[][] graphArr) {
 								nodes = new Node[graphArr.length];
 								for (int i=0; i<graphArr.length; i++) {
@@ -109,6 +105,9 @@ public class Graph {
 								return nodes;
 				}
 
+				/*
+				 * Get Node from value
+				 */
 				public Node getNode(int nodeValue) {
 								int nodes_length = this.nodes.length;
 								Node[] node_candidates = new Node[nodes_length];
@@ -143,6 +142,10 @@ public class Graph {
 								return node_candidates[0];
 				}
 
+				/*
+				 * Return the cycle as a List<Integer> composed of Node node with value `nodeValue`
+				 * Triggered after a node is seen again on `onStack`
+				 */
 				public LinkedList<Integer> getCycle(Integer nodeValue, boolean[] onStack, Deque<Integer> pathStack) {
 								Deque<Integer> onStackQueue = new LinkedList<Integer>();
 								LinkedList<Integer> cycle = new LinkedList<Integer>();
@@ -166,6 +169,11 @@ public class Graph {
 								return cycle;
 				}
 
+				/*
+				 * Return the SCC as List<Integer> composed of Node `node`
+				 * Triggered after discovery index of `node` is equals its lowlink index,
+				 * effectively finding the head of the component
+				 */
 				public List<Integer> getSCC(Node node, boolean[] onStack, Deque<Integer> pathStack) {
 								LinkedList<Integer> scc = new LinkedList<Integer>();
 								int nodeValue = node.value;
@@ -201,10 +209,9 @@ public class Graph {
 
 
 				/* DFS public method
-				 *
-				 * Set the variable that will be needed throughout the recursion
-				 *Handle edge cases
-				 *Handle graphs with disconnected nodes
+				 * Start DFS from node `root`
+				 * Set the variables that will be needed throughout the recursion
+				 * Handle graphs with disconnected nodes with boolean `explore_unvisited` set to true
 				 */
 				public int[] DFS(Node root, boolean explore_unvisited) {
 								int nodes_length = this.nodes.length;
@@ -212,6 +219,7 @@ public class Graph {
 								boolean[] visited = new boolean[nodes_length];
 								List<List<Integer>> foundCycles = new LinkedList<>();
 								List<List<Integer>> foundSCCs = new LinkedList<>();
+								// SCC
 								int[] disc = new int[nodes_length];
 								int[] low = new int[nodes_length];
 								LinkedList<Integer> dfs_nodes = new LinkedList<Integer>();
@@ -248,6 +256,10 @@ public class Graph {
 				}
 
 
+				/*
+				 * DFS private method
+				 * Keep track of different variables needed for cycle detection, SCC detections, discoverying&finishing orders
+				 */
 				private void DFS(Node root, boolean[] onStack, boolean[] visited, List<List<Integer>> foundCycles, List<List<Integer>> foundSCCs, LinkedList<Integer> dfs_nodes, Deque<Integer> pathStack) {
 								// If at "leaf" node, visit and add to dfs_nodes
 								if (root.adjancy.size() == 0) {
@@ -323,7 +335,6 @@ public class Graph {
 
 
 				public static boolean hasCycle(int[][] graph) {
-								// TODO
 								Graph graphObj = new Graph(graph);
 								graphObj.DFS(graphObj.nodes[0], false);
 								if (graphObj.cycles.size() > 0) {
@@ -334,7 +345,6 @@ public class Graph {
 
 
 				public static List<List<Integer>> findAllCycles(int[][] graph) {
-								// TODO
 								Graph graphObj = new Graph(graph);
 								graphObj.DFS(graphObj.nodes[0], false);
 								return graphObj.cycles;
@@ -353,26 +363,12 @@ public class Graph {
 								return graphObj.SCCs;
 				}
 
-				/* -----------------------------------------------------------------
-				 *  4.  Count reachable nodes from a start vertex
-				 * ----------------------------------------------------------------- */
 				public static int countReachableNodes(int[][] graph, int start) {
 								Graph graphObj = new Graph(graph);
 								graphObj.DFS(graphObj.nodes[start], false);
 								return graphObj.discCount;
 				}
-//				public static int countReachableNodes(int[][] graph, int start) {
-//						Graph g = new Graph(graph);
-//						boolean[] visited = new boolean[g.numNodes];
-//						List<Integer> reachable = new LinkedList<>();
-//						g.simpleDFS(start, visited, reachable);
-//						System.out.println("DEBUG(countReachableNodes): reachable = " + reachable);
-//						return reachable.size();
-//				}
 
-				/* -----------------------------------------------------------------
-				 *  5.  Find bridge vertices (undirected interpretation)
-				 * ----------------------------------------------------------------- */
 				public static List<Integer> findBridgeNodes(int[][] graph) {
 						Graph g = new Graph(graph);
 						int[] disc = new int[g.numNodes];
@@ -424,9 +420,6 @@ public class Graph {
 						}
 				}
 
-				/* -----------------------------------------------------------------
-				 *  6.  Finishing times (post‑order) of a full DFS
-				 * ----------------------------------------------------------------- */
 				private Map<Integer, Integer> computeFinishingTimes() {
 						Map<Integer, Integer> ft = new HashMap<Integer, Integer>();
 						this.DFS(this.nodes[0], true);
@@ -443,9 +436,6 @@ public class Graph {
 						return ft;
 				}
 
-				/* -----------------------------------------------------------------
-				 *  7.  Can we install everything if some nodes are broken?
-				 * ----------------------------------------------------------------- */
 				private boolean hasCycleIgnoring(Set<Integer> brokenSet) {
 						return false;
 				}
@@ -459,9 +449,6 @@ public class Graph {
 						return !hasCycle;
 				}
 
-				/* -----------------------------------------------------------------
-				 *  8.  Minimal dependency set for a target vertex
-				 * ----------------------------------------------------------------- */
 				public static List<Integer> findMinimalDependencySet(int[][] graph, int target) {
 						Graph graphObj= new Graph(graph);
 
@@ -499,9 +486,6 @@ public class Graph {
 						return deps;   // this is the transitive closure; it is already minimal
 				}
 
-				/* -----------------------------------------------------------------
-				 *  9.  Longest dependency chain (only defined for a DAG)
-				 * ----------------------------------------------------------------- */
 				public static int longestDependencyChain(int[][] graph) {
 						// First, check for cycles – if any exist the longest chain is undefined.
 						if (hasCycle(graph)) {
@@ -532,9 +516,6 @@ public class Graph {
 						return best;   // length measured in edges (add 1 if you want vertex count)
 				}
 
-				/* -----------------------------------------------------------------
-				 * 10.  All source nodes (indegree == 0)
-				 * ----------------------------------------------------------------- */
 				private int[] computeIndegrees() {
 						int[] indeg = new int[this.numNodes];
 						for (int i=0; i<this.numNodes; i++) {
