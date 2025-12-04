@@ -1,4 +1,9 @@
 /*
+ * Ganda Rioult Tchabana (20125185)
+ * Jean-Philippe Salis Routhier (20240919)
+*/
+
+/*
  * ATTESTATION D’INTÉGRITÉ ACADÉMIQUE
  *
  * [ ] Je certifie n’avoir utilisé aucun outil d’IA générative

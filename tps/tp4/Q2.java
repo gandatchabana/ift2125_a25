@@ -1,6 +1,6 @@
-/**
- * Jean-Philippe Salis Routhier
- * 20240919
+/*
+ * Ganda Rioult Tchabana (20125185)
+ * Jean-Philippe Salis Routhier (20240919)
 */
 
 /*
