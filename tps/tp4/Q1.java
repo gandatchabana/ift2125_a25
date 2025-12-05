@@ -189,7 +189,23 @@ public class Graph {
 																System.out.println("DEBUG(getCycle): Added path " + v + "to cycle");
 												}
 								}
+
+								// Sort the cycle in ascending order
+								Collections.sort(cycle);
 								return cycle;
+				}
+
+				/*
+				 * Sort a List<List<Integer>> by ascending number of elements in each List<Integer>
+				 */
+				public void sortCyclesByElemCount(List<List<Integer>> supList) {
+								class NumElemComparator implements Comparator<List<Integer>> {
+												public int compare(List<Integer> list1, List<Integer> list2) {
+																return list1.size() - list2.size();
+												}
+								}
+
+								Collections.sort(supList, new NumElemComparator());
 				}
 
 				/*
@@ -264,6 +280,9 @@ public class Graph {
 																}
 												}
 								}
+
+								// Sort foundCycles in ascending order for number of elemets per list
+								sortCyclesByElemCount(foundCycles);
 
 								// Convert dfs_node LinkedList -> int[]
 								Object[] dfs_nodes_obj = dfs_nodes.toArray();
@@ -359,7 +378,7 @@ public class Graph {
 
 				public static boolean hasCycle(int[][] graph) {
 								Graph graphObj = new Graph(graph);
-								graphObj.DFS(graphObj.nodes[0], false);
+								graphObj.DFS(graphObj.nodes[0], true);
 								if (graphObj.cycles.size() > 0) {
 												return true;
 								}
@@ -404,9 +423,9 @@ public class Graph {
 						Arrays.fill(disc, -1);
 						int time = 0;
 
-						for (int i = 0; i < g.numNodes; i++) {
+						for (int i = 0; i < graphObj.numNodes; i++) {
 								if (!visited[i]) {
-										g.bridgeDFS(i, -1, time, visited, disc, lowlink, bridges);
+										graphObj.bridgeDFS(i, -1, time, visited, disc, lowlink, bridges);
 								}
 						}
 						System.out.println("DEBUG(findBridgeNodes): bridges = " + bridges);
